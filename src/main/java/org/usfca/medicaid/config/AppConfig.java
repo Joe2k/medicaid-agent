@@ -8,13 +8,16 @@ import dev.langchain4j.store.embedding.pinecone.PineconeEmbeddingStore;
 import java.time.Duration;
 
 public class AppConfig {
-    
+
+    // ENV variables
     private static final String OPENAI_API_KEY = System.getenv("OPENAI_API_KEY");
     private static final String PINECONE_API_KEY = System.getenv("PINECONE_API_KEY");
-    private static final String PINECONE_ENVIRONMENT = System.getenv("PINECONE_ENVIRONMENT") != null ? 
-        System.getenv("PINECONE_ENVIRONMENT") : "us-east-1-aws";
-    private static final String PINECONE_INDEX_NAME = System.getenv("PINECONE_INDEX_NAME") != null ? 
-        System.getenv("PINECONE_INDEX_NAME") : "medicaid-minnesota";
+    private static final String PINECONE_ENVIRONMENT = System.getenv().getOrDefault("PINECONE_ENVIRONMENT", "us-east-1-aws");
+    private static final String PINECONE_INDEX_NAME = System.getenv().getOrDefault("PINECONE_INDEX_NAME", "medicaid-v1");
+    
+    // Model Configuration
+    private static final String openaiChatModel = "gpt-3.5-turbo";
+    private static final String openaiEmbeddingModel = "text-embedding-ada-002";
     
     // Vector Store Configuration
     /**
@@ -31,7 +34,7 @@ public class AppConfig {
         
         return OpenAiChatModel.builder()
                 .apiKey(OPENAI_API_KEY)
-                .modelName("gpt-3.5-turbo")
+                .modelName(openaiChatModel)
                 .temperature(0.1)
                 .timeout(Duration.ofSeconds(60))
                 .build();
@@ -44,8 +47,8 @@ public class AppConfig {
         
         return OpenAiEmbeddingModel.builder()
                 .apiKey(OPENAI_API_KEY)
-                .modelName("text-embedding-3-small")  // This produces 1536 dimensions by default
-                .dimensions(1024)  // Force it to use 1024 dimensions to match your Pinecone index
+                .modelName(openaiEmbeddingModel)
+                .dimensions(1024)
                 .timeout(Duration.ofSeconds(60))
                 .build();
     }
