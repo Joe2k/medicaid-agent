@@ -17,7 +17,7 @@ public class AppConfig {
     
     // Model Configuration
     private static final String openaiChatModel = "gpt-3.5-turbo";
-    private static final String openaiEmbeddingModel = "text-embedding-ada-002";
+    private static final String openaiEmbeddingModel = "text-embedding-3-small";
     
     // Vector Store Configuration
     /**
