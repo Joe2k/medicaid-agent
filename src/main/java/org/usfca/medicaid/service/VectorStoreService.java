@@ -106,16 +106,17 @@ public class VectorStoreService {
     }
     
     /**
-     * Generate a unique document ID based on source and content hash
+     * Generate a stable document ID based on source URL/path only
+     * This ensures the same document always gets the same ID, enabling duplicate detection
      */
     private String generateDocumentId(Document document) {
         String source = document.metadata().asMap().get("source");
         String title = document.metadata().asMap().get("title");
-        
-        // Create a hash of the content for uniqueness
-        String contentHash = String.valueOf(document.text().hashCode());
-        
-        return source + "_" + title.replaceAll("[^a-zA-Z0-9]", "_") + "_" + contentHash;
+
+        String cleanTitle = title.replaceAll("[^a-zA-Z0-9]", "_");
+        String documentId = source + "_" + cleanTitle;
+
+        return documentId;
     }
     
     /**
@@ -137,7 +138,6 @@ public class VectorStoreService {
                     return true;
                 }
             }
-            
             return false;
         } catch (Exception e) {
             // If there's an error checking, assume document doesn't exist
