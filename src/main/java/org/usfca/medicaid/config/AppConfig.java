@@ -19,12 +19,6 @@ public class AppConfig {
     
     private static final String openaiChatModel = "gpt-3.5-turbo";
     private static final String openaiEmbeddingModel = "text-embedding-3-small";
-    
-    /**
-     * Whether to skip documents that already exist in the vector store
-     * Set to false if you want to force re-upload all documents
-     */
-    private static final boolean SKIP_EXISTING_DOCUMENTS = true;
 
     /**
      * Create and configure an OpenAI chat model.
@@ -79,15 +73,6 @@ public class AppConfig {
                 .apiKey(PINECONE_API_KEY)
                 .index(PINECONE_INDEX_NAME)
                 .build();
-    }
-    
-    /**
-     * Get the configuration for skipping existing documents.
-     *
-     * @return true if existing documents should be skipped, false otherwise
-     */
-    public static boolean isSkipExistingDocuments() {
-        return SKIP_EXISTING_DOCUMENTS;
     }
 
 }

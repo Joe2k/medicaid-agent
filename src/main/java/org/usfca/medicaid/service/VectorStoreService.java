@@ -35,18 +35,13 @@ public class VectorStoreService {
     }
     
     /**
-     * Add a document to the vector store (only if not already present).
+     * Add a document to the vector store.
      * Documents are split into segments, embedded, and stored with metadata.
      *
      * @param document the document to add to the vector store
      */
     public void addDocument(Document document) {
         String documentId = generateDocumentId(document);
-        
-        if (AppConfig.isSkipExistingDocuments() && documentExists(documentId)) {
-            System.out.println("⏭️  Document already exists, skipping: " + document.metadata().toMap().get("title"));
-            return;
-        }
         
         List<TextSegment> segments = documentSplitter.split(document);
         
@@ -72,6 +67,13 @@ public class VectorStoreService {
         for (Document document : documents) {
             addDocument(document);
         }
+    }
+    
+    /**
+     * Clear all documents from the vector store.
+     */
+    public void clearAllDocuments() {
+        embeddingStore.removeAll();
     }
     
     /**
@@ -133,7 +135,6 @@ public class VectorStoreService {
     
     /**
      * Generate a stable document ID based on source URL/path only.
-     * This ensures the same document always gets the same ID, enabling duplicate detection.
      *
      * @param document the document to generate an ID for
      * @return a stable unique identifier for the document
@@ -146,36 +147,5 @@ public class VectorStoreService {
         String documentId = source + "_" + cleanTitle;
 
         return documentId;
-    }
-    
-    /**
-     * Check if a document already exists in the vector store.
-     *
-     * @param documentId the document ID to check
-     * @return true if the document exists, false otherwise
-     */
-    private boolean documentExists(String documentId) {
-        try {
-            Embedding queryEmbedding = embeddingModel.embed(documentId).content();
-            
-            EmbeddingSearchRequest searchRequest = EmbeddingSearchRequest.builder()
-                    .queryEmbedding(queryEmbedding)
-                    .maxResults(1)
-                    .minScore(0.0)
-                    .build();
-            
-            EmbeddingSearchResult<TextSegment> searchResult = embeddingStore.search(searchRequest);
-            
-            for (EmbeddingMatch<TextSegment> match : searchResult.matches()) {
-                String existingDocId = (String) match.embedded().metadata().toMap().get("document_id");
-                if (documentId.equals(existingDocId)) {
-                    return true;
-                }
-            }
-            return false;
-        } catch (Exception e) {
-            System.out.println("Warning: Could not check if document exists: " + e.getMessage());
-            return false;
-        }
     }
 }
