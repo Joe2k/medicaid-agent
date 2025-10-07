@@ -37,7 +37,6 @@ public class MedicaidChatbot {
                     break;
                 }
                 
-                // Generate and display response
                 System.out.print("Medicaid Assistant: ");
                 String response = ragService.generateResponse(userInput);
                 System.out.println(response);

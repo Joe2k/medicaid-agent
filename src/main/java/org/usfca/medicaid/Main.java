@@ -79,17 +79,14 @@ public class Main {
         System.out.println("=".repeat(60));
         
         try {
-            // Initialize the RAG service
             System.out.println("Initializing the RAG system...");
             RagService ragService = new RagService();
             
-            // Load documents
             DocumentLoaderService documentLoader = new DocumentLoaderService();
             List<dev.langchain4j.data.document.Document> documents = documentLoader.loadDocuments();
             
             System.out.println("\nLoading " + documents.size() + " documents into the knowledge base...");
             
-            // Add documents to the vector store
             ragService.addDocuments(documents);
             
             System.out.println("\n✅ Documents loaded successfully!");
@@ -111,7 +108,6 @@ public class Main {
         try {
             System.out.println("Initializing the chatbot...\n");
             
-            // Start the chatbot with the shared scanner
             MedicaidChatbot chatbot = new MedicaidChatbot(scanner);
             chatbot.start();
             

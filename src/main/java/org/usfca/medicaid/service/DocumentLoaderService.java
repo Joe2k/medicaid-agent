@@ -90,16 +90,14 @@ public class DocumentLoaderService {
         if (!mainContent.isEmpty()) {
             content.append(mainContent.text());
         } else {
-            // Fallback to body content
             Element body = doc.body();
             if (body != null) {
                 content.append(body.text());
             }
         }
         
-        // Clean up the content
         String cleanContent = content.toString()
-                .replaceAll("\\s+", " ")  // Replace multiple whitespace with single space
+                .replaceAll("\\s+", " ")
                 .trim();
         
         if (cleanContent.isEmpty()) {
@@ -127,9 +125,8 @@ public class DocumentLoaderService {
                 throw new IOException("No content extracted from PDF");
             }
             
-            // Clean up the content
             String cleanContent = content
-                    .replaceAll("\\s+", " ")  // Replace multiple whitespace with single space
+                    .replaceAll("\\s+", " ")
                     .trim();
             
             String fileName = path.getFileName().toString();
@@ -175,9 +172,8 @@ public class DocumentLoaderService {
                 throw new IOException("No content extracted from file");
             }
             
-            // Clean up the content
             String cleanContent = content
-                    .replaceAll("\\s+", " ")  // Replace multiple whitespace with single space
+                    .replaceAll("\\s+", " ")
                     .trim();
             
             String fileName = path.getFileName().toString();

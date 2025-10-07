@@ -21,7 +21,6 @@ public class RagService {
      * Generate a response using RAG (Retrieval-Augmented Generation)
      */
     public String generateResponse(String userQuery) {
-        // Retrieve relevant documents
         List<TextSegment> relevantDocuments = vectorStoreService.searchRelevantDocuments(userQuery, 5, 0.7);
         
         if (relevantDocuments.isEmpty()) {
@@ -29,13 +28,10 @@ public class RagService {
                    "Please try rephrasing your question or contact the Minnesota Department of Human Services for assistance.";
         }
         
-        // Build context from retrieved documents
         String context = buildContextFromDocuments(relevantDocuments);
         
-        // Create the prompt with context and user query
         String prompt = buildPrompt(context, userQuery);
         
-        // Generate response using the chat model
         return chatModel.generate(prompt);
     }
     
