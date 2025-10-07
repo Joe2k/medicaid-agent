@@ -7,18 +7,28 @@ import org.usfca.medicaid.config.AppConfig;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Service that implements Retrieval-Augmented Generation (RAG) for the chatbot.
+ */
 public class RagService {
     
     private final VectorStoreService vectorStoreService;
     private final ChatLanguageModel chatModel;
     
+    /**
+     * Constructs a new RagService with initialized vector store and chat model.
+     */
     public RagService() {
         this.vectorStoreService = new VectorStoreService();
         this.chatModel = AppConfig.createChatModel();
     }
     
     /**
-     * Generate a response using RAG (Retrieval-Augmented Generation)
+     * Generate a response using RAG (Retrieval-Augmented Generation).
+     * Retrieves relevant documents and uses them as context for the language model.
+     *
+     * @param userQuery the user's question or query
+     * @return a generated response based on the retrieved context
      */
     public String generateResponse(String userQuery) {
         List<TextSegment> relevantDocuments = vectorStoreService.searchRelevantDocuments(userQuery, 5, 0.7);
@@ -36,7 +46,10 @@ public class RagService {
     }
     
     /**
-     * Build context string from retrieved documents
+     * Build context string from retrieved documents.
+     *
+     * @param documents the list of retrieved document segments
+     * @return a formatted string containing all document text separated by dividers
      */
     private String buildContextFromDocuments(List<TextSegment> documents) {
         return documents.stream()
@@ -45,7 +58,11 @@ public class RagService {
     }
     
     /**
-     * Build the prompt for the chat model
+     * Build the prompt for the chat model with context and instructions.
+     *
+     * @param context the context from retrieved documents
+     * @param userQuery the user's question
+     * @return a formatted prompt for the language model
      */
     private String buildPrompt(String context, String userQuery) {
         return String.format("""
@@ -69,7 +86,9 @@ public class RagService {
     }
     
     /**
-     * Add documents to the knowledge base
+     * Add documents to the knowledge base.
+     *
+     * @param documents the list of documents to add to the vector store
      */
     public void addDocuments(List<dev.langchain4j.data.document.Document> documents) {
         vectorStoreService.addDocuments(documents);

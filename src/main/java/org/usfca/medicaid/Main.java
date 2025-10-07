@@ -7,9 +7,18 @@ import org.usfca.medicaid.service.RagService;
 import java.util.List;
 import java.util.Scanner;
 
+/**
+ * Main entry point for the Minnesota Medicaid Eligibility Chatbot application.
+ */
 public class Main {
     private static Scanner scanner;
     
+    /**
+     * Main method that starts the application.
+     * Displays a menu allowing users to load documents or start chatting with the agent.
+     *
+     * @param args command line arguments (not used)
+     */
     public static void main(String[] args) {
         System.out.println("=== Minnesota Medicaid Eligibility Chatbot ===");
         

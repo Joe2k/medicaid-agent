@@ -3,11 +3,18 @@ package org.usfca.medicaid.config;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Configuration class for document sources.
+ * Contains the list of URLs and file paths for documents to be loaded
+ * into the RAG system's knowledge base.
+ */
 public class DocumentConfig {
     
     /**
-     * Get all document sources for the RAG system
-     * Add your PDF files, URLs, and text files here
+     * Get all document sources for the RAG system.
+     * This includes URLs to Minnesota Medicaid documentation and related resources.
+     *
+     * @return a list of document source URLs and file paths
      */
     public static List<String> getDocumentSources() {
         return Arrays.asList(

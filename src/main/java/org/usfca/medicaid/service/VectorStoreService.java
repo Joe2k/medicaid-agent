@@ -13,12 +13,19 @@ import org.usfca.medicaid.config.AppConfig;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Service for managing document storage and retrieval in a vector database.
+ */
 public class VectorStoreService {
     
     private final EmbeddingStore<TextSegment> embeddingStore;
     private final EmbeddingModel embeddingModel;
     private final DocumentSplitter documentSplitter;
     
+    /**
+     * Constructs a new VectorStoreService with initialized embedding store,
+     * embedding model, and document splitter.
+     */
     public VectorStoreService() {
         this.embeddingStore = AppConfig.createPineconeEmbeddingStore();
         this.embeddingModel = AppConfig.createEmbeddingModel();
@@ -26,7 +33,10 @@ public class VectorStoreService {
     }
     
     /**
-     * Add a document to the vector store (only if not already present)
+     * Add a document to the vector store (only if not already present).
+     * Documents are split into segments, embedded, and stored with metadata.
+     *
+     * @param document the document to add to the vector store
      */
     public void addDocument(Document document) {
         String documentId = generateDocumentId(document);
@@ -52,7 +62,9 @@ public class VectorStoreService {
     }
     
     /**
-     * Add multiple documents to the vector store
+     * Add multiple documents to the vector store.
+     *
+     * @param documents the list of documents to add
      */
     public void addDocuments(List<Document> documents) {
         for (Document document : documents) {
@@ -61,7 +73,11 @@ public class VectorStoreService {
     }
     
     /**
-     * Search for relevant documents based on a query
+     * Search for relevant documents based on a query.
+     *
+     * @param query the search query
+     * @param maxResults the maximum number of results to return
+     * @return a list of relevant text segments
      */
     public List<TextSegment> searchRelevantDocuments(String query, int maxResults) {
         Embedding queryEmbedding = embeddingModel.embed(query).content();
@@ -74,7 +90,12 @@ public class VectorStoreService {
     }
     
     /**
-     * Search for relevant documents with a minimum score threshold
+     * Search for relevant documents with a minimum score threshold.
+     *
+     * @param query the search query
+     * @param maxResults the maximum number of results to return
+     * @param minScore the minimum similarity score threshold (0.0 to 1.0)
+     * @return a list of relevant text segments that meet the score threshold
      */
     public List<TextSegment> searchRelevantDocuments(String query, int maxResults, double minScore) {
         Embedding queryEmbedding = embeddingModel.embed(query).content();
@@ -88,15 +109,21 @@ public class VectorStoreService {
     }
     
     /**
-     * Get all documents in the store
+     * Get all documents in the store.
+     * Uses a broad query to retrieve up to 1000 documents.
+     *
+     * @return a list of all text segments in the store
      */
     public List<TextSegment> getAllDocuments() {
         return searchRelevantDocuments("medicaid eligibility benefits", 1000);
     }
     
     /**
-     * Generate a stable document ID based on source URL/path only
-     * This ensures the same document always gets the same ID, enabling duplicate detection
+     * Generate a stable document ID based on source URL/path only.
+     * This ensures the same document always gets the same ID, enabling duplicate detection.
+     *
+     * @param document the document to generate an ID for
+     * @return a stable unique identifier for the document
      */
     private String generateDocumentId(Document document) {
         String source = document.metadata().asMap().get("source");
@@ -109,7 +136,10 @@ public class VectorStoreService {
     }
     
     /**
-     * Check if a document already exists in the vector store
+     * Check if a document already exists in the vector store.
+     *
+     * @param documentId the document ID to check
+     * @return true if the document exists, false otherwise
      */
     private boolean documentExists(String documentId) {
         try {

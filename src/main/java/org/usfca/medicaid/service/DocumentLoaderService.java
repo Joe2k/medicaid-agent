@@ -18,16 +18,25 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Service for loading documents from various sources including URLs, PDFs,
+ * text files, and other file types.
+ */
 public class DocumentLoaderService {
     
     private final Tika tika;
     
+    /**
+     * Constructs a new DocumentLoaderService with an initialized Tika instance.
+     */
     public DocumentLoaderService() {
         this.tika = new Tika();
     }
 
     /**
-     * Load all documents from DocumentConfig
+     * Load all documents from DocumentConfig.
+     *
+     * @return a list of loaded documents
      */
     public List<Document> loadDocuments() {
         List<String> sources = DocumentConfig.getDocumentSources();
@@ -52,7 +61,13 @@ public class DocumentLoaderService {
     }
     
     /**
-     * Load a single document from various sources
+     * Load a single document from various sources.
+     * Automatically detects the source type and uses the appropriate loader.
+     *
+     * @param source the source path or URL
+     * @return the loaded document
+     * @throws IOException if an I/O error occurs
+     * @throws TikaException if document parsing fails
      */
     public Document loadDocument(String source) throws IOException, TikaException {
         if (source.startsWith("http://") || source.startsWith("https://")) {
@@ -67,7 +82,11 @@ public class DocumentLoaderService {
     }
     
     /**
-     * Load content from a URL
+     * Load content from a URL using JSoup.
+     *
+     * @param url the URL to load content from
+     * @return a document containing the web page content
+     * @throws IOException if the URL cannot be accessed or parsed
      */
     private Document loadFromUrl(String url) throws IOException {
         System.out.println("🌐 Loading content from URL: " + url);
@@ -108,7 +127,12 @@ public class DocumentLoaderService {
     }
     
     /**
-     * Load content from a PDF file
+     * Load content from a PDF file using Apache Tika.
+     *
+     * @param filePath the path to the PDF file
+     * @return a document containing the PDF content
+     * @throws IOException if the file cannot be read
+     * @throws TikaException if PDF parsing fails
      */
     private Document loadFromPdfFile(String filePath) throws IOException, TikaException {
         System.out.println("📄 Loading PDF file: " + filePath);
@@ -137,7 +161,11 @@ public class DocumentLoaderService {
     }
     
     /**
-     * Load content from a text file
+     * Load content from a text file.
+     *
+     * @param filePath the path to the text file
+     * @return a document containing the text file content
+     * @throws IOException if the file cannot be read
      */
     private Document loadFromTextFile(String filePath) throws IOException {
         System.out.println("📝 Loading text file: " + filePath);
@@ -155,7 +183,12 @@ public class DocumentLoaderService {
     }
     
     /**
-     * Load content from any file (auto-detect type)
+     * Load content from any file with automatic type detection using Apache Tika.
+     *
+     * @param filePath the path to the file
+     * @return a document containing the file content
+     * @throws IOException if the file cannot be read
+     * @throws TikaException if content extraction fails
      */
     private Document loadFromFile(String filePath) throws IOException, TikaException {
         System.out.println("📁 Loading file (auto-detect): " + filePath);
@@ -184,7 +217,14 @@ public class DocumentLoaderService {
     }
     
     /**
-     * Create a document with metadata
+     * Create a document with metadata.
+     *
+     * @param title the document title
+     * @param content the document content
+     * @param category the document category (e.g., "web", "pdf", "text")
+     * @param type the document type (e.g., "url", "file")
+     * @param source the source path or URL
+     * @return a document with the specified content and metadata
      */
     private Document createDocument(String title, String content, String category, String type, String source) {
         Metadata metadata = new Metadata();

@@ -4,12 +4,20 @@ import org.usfca.medicaid.service.RagService;
 
 import java.util.Scanner;
 
+/**
+ * Interactive chatbot for answering Minnesota Medicaid eligibility questions.
+ */
 public class MedicaidChatbot {
     
     private final RagService ragService;
     private final Scanner scanner;
     private boolean isRunning;
 
+    /**
+     * Constructs a new MedicaidChatbot with the specified scanner.
+     *
+     * @param scanner the scanner to use for reading user input
+     */
     public MedicaidChatbot(Scanner scanner) {
         this.ragService = new RagService();
         this.scanner = scanner;
@@ -64,7 +72,10 @@ public class MedicaidChatbot {
     }
     
     /**
-     * Check if the input is an exit command
+     * Check if the input is an exit command.
+     *
+     * @param input the user input to check
+     * @return true if the input is an exit command, false otherwise
      */
     private boolean isExitCommand(String input) {
         String lowerInput = input.toLowerCase();
@@ -89,7 +100,9 @@ public class MedicaidChatbot {
     }
     
     /**
-     * Check if the chatbot is running
+     * Check if the chatbot is running.
+     *
+     * @return true if the chatbot is running, false otherwise
      */
     public boolean isRunning() {
         return isRunning;
