@@ -7,6 +7,8 @@ import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
+import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
+import dev.langchain4j.store.embedding.EmbeddingSearchResult;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import org.usfca.medicaid.config.AppConfig;
 
@@ -42,7 +44,7 @@ public class VectorStoreService {
         String documentId = generateDocumentId(document);
         
         if (AppConfig.isSkipExistingDocuments() && documentExists(documentId)) {
-            System.out.println("⏭️  Document already exists, skipping: " + document.metadata().asMap().get("title"));
+            System.out.println("⏭️  Document already exists, skipping: " + document.metadata().toMap().get("title"));
             return;
         }
         
@@ -58,7 +60,7 @@ public class VectorStoreService {
         
         embeddingStore.addAll(embeddings, segments);
         
-        System.out.println("✅ Added " + segments.size() + " segments from document: " + document.metadata().asMap().get("title"));
+        System.out.println("✅ Added " + segments.size() + " segments from document: " + document.metadata().toMap().get("title"));
     }
     
     /**
@@ -82,9 +84,15 @@ public class VectorStoreService {
     public List<TextSegment> searchRelevantDocuments(String query, int maxResults) {
         Embedding queryEmbedding = embeddingModel.embed(query).content();
         
-        List<EmbeddingMatch<TextSegment>> matches = embeddingStore.findRelevant(queryEmbedding, maxResults, 0.0);
+        EmbeddingSearchRequest searchRequest = EmbeddingSearchRequest.builder()
+                .queryEmbedding(queryEmbedding)
+                .maxResults(maxResults)
+                .minScore(0.0)
+                .build();
         
-        return matches.stream()
+        EmbeddingSearchResult<TextSegment> searchResult = embeddingStore.search(searchRequest);
+        
+        return searchResult.matches().stream()
                 .map(EmbeddingMatch::embedded)
                 .collect(Collectors.toList());
     }
@@ -100,10 +108,15 @@ public class VectorStoreService {
     public List<TextSegment> searchRelevantDocuments(String query, int maxResults, double minScore) {
         Embedding queryEmbedding = embeddingModel.embed(query).content();
         
-        List<EmbeddingMatch<TextSegment>> matches = embeddingStore.findRelevant(queryEmbedding, maxResults, 0.0);
+        EmbeddingSearchRequest searchRequest = EmbeddingSearchRequest.builder()
+                .queryEmbedding(queryEmbedding)
+                .maxResults(maxResults)
+                .minScore(minScore)
+                .build();
         
-        return matches.stream()
-                .filter(match -> match.score() >= minScore)
+        EmbeddingSearchResult<TextSegment> searchResult = embeddingStore.search(searchRequest);
+        
+        return searchResult.matches().stream()
                 .map(EmbeddingMatch::embedded)
                 .collect(Collectors.toList());
     }
@@ -126,8 +139,8 @@ public class VectorStoreService {
      * @return a stable unique identifier for the document
      */
     private String generateDocumentId(Document document) {
-        String source = document.metadata().asMap().get("source");
-        String title = document.metadata().asMap().get("title");
+        String source = (String) document.metadata().toMap().get("source");
+        String title = (String) document.metadata().toMap().get("title");
 
         String cleanTitle = title.replaceAll("[^a-zA-Z0-9]", "_");
         String documentId = source + "_" + cleanTitle;
@@ -143,14 +156,18 @@ public class VectorStoreService {
      */
     private boolean documentExists(String documentId) {
         try {
-            List<EmbeddingMatch<TextSegment>> matches = embeddingStore.findRelevant(
-                embeddingModel.embed(documentId).content(), 
-                1, 
-                0.0
-            );
+            Embedding queryEmbedding = embeddingModel.embed(documentId).content();
             
-            for (EmbeddingMatch<TextSegment> match : matches) {
-                String existingDocId = match.embedded().metadata().asMap().get("document_id");
+            EmbeddingSearchRequest searchRequest = EmbeddingSearchRequest.builder()
+                    .queryEmbedding(queryEmbedding)
+                    .maxResults(1)
+                    .minScore(0.0)
+                    .build();
+            
+            EmbeddingSearchResult<TextSegment> searchResult = embeddingStore.search(searchRequest);
+            
+            for (EmbeddingMatch<TextSegment> match : searchResult.matches()) {
+                String existingDocId = (String) match.embedded().metadata().toMap().get("document_id");
                 if (documentId.equals(existingDocId)) {
                     return true;
                 }
