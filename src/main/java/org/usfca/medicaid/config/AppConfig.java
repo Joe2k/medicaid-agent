@@ -7,6 +7,9 @@ import dev.langchain4j.store.embedding.pinecone.PineconeEmbeddingStore;
 
 import java.time.Duration;
 
+/**
+ * Configuration class for the application.
+ */
 public class AppConfig {
 
     private static final String OPENAI_API_KEY = System.getenv("OPENAI_API_KEY");
@@ -23,7 +26,12 @@ public class AppConfig {
      */
     private static final boolean SKIP_EXISTING_DOCUMENTS = true;
 
-    
+    /**
+     * Create and configure an OpenAI chat model.
+     *
+     * @return configured OpenAI chat model instance
+     * @throws IllegalStateException if OPENAI_API_KEY is not set
+     */
     public static OpenAiChatModel createChatModel() {
         if (OPENAI_API_KEY == null || OPENAI_API_KEY.isEmpty()) {
             throw new IllegalStateException("OPENAI_API_KEY environment variable is required");
@@ -37,6 +45,12 @@ public class AppConfig {
                 .build();
     }
     
+    /**
+     * Create and configure an OpenAI embedding model.
+     *
+     * @return configured OpenAI embedding model instance
+     * @throws IllegalStateException if OPENAI_API_KEY is not set
+     */
     public static EmbeddingModel createEmbeddingModel() {
         if (OPENAI_API_KEY == null || OPENAI_API_KEY.isEmpty()) {
             throw new IllegalStateException("OPENAI_API_KEY environment variable is required");
@@ -50,6 +64,12 @@ public class AppConfig {
                 .build();
     }
     
+    /**
+     * Create and configure a Pinecone embedding store.
+     *
+     * @return configured Pinecone embedding store instance
+     * @throws IllegalStateException if PINECONE_API_KEY is not set
+     */
     public static PineconeEmbeddingStore createPineconeEmbeddingStore() {
         if (PINECONE_API_KEY == null || PINECONE_API_KEY.isEmpty()) {
             throw new IllegalStateException("PINECONE_API_KEY environment variable is required");
@@ -61,6 +81,11 @@ public class AppConfig {
                 .build();
     }
     
+    /**
+     * Get the configuration for skipping existing documents.
+     *
+     * @return true if existing documents should be skipped, false otherwise
+     */
     public static boolean isSkipExistingDocuments() {
         return SKIP_EXISTING_DOCUMENTS;
     }
