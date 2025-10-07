@@ -118,6 +118,10 @@ public class MedicaidApplication {
         System.out.println("=".repeat(60));
         
         try {
+            System.out.println("🗑️  Clearing existing documents from vector store...");
+            vectorStoreService.clearAllDocuments();
+            System.out.println("✅ Vector store cleared.\n");
+            
             System.out.println("Loading documents from configured sources...");
             
             List<dev.langchain4j.data.document.Document> documents = documentLoaderService.loadDocuments();
