@@ -16,10 +16,12 @@ public class RagService {
     private final ChatLanguageModel chatModel;
     
     /**
-     * Constructs a new RagService with initialized vector store and chat model.
+     * Constructs a new RagService with the provided vector store service.
+     *
+     * @param vectorStoreService the vector store service for document retrieval
      */
-    public RagService() {
-        this.vectorStoreService = new VectorStoreService();
+    public RagService(VectorStoreService vectorStoreService) {
+        this.vectorStoreService = vectorStoreService;
         this.chatModel = AppConfig.createChatModel();
     }
     
@@ -83,14 +85,5 @@ public class RagService {
             6. Always remind users that this is general information and they should contact the Minnesota Department of Human Services for their specific situation
             
             Answer:""", context, userQuery);
-    }
-    
-    /**
-     * Add documents to the knowledge base.
-     *
-     * @param documents the list of documents to add to the vector store
-     */
-    public void addDocuments(List<dev.langchain4j.data.document.Document> documents) {
-        vectorStoreService.addDocuments(documents);
     }
 }

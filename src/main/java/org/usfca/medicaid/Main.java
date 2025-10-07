@@ -3,6 +3,7 @@ package org.usfca.medicaid;
 import org.usfca.medicaid.chatbot.MedicaidChatbot;
 import org.usfca.medicaid.service.DocumentLoaderService;
 import org.usfca.medicaid.service.RagService;
+import org.usfca.medicaid.service.VectorStoreService;
 
 import java.util.List;
 import java.util.Scanner;
@@ -12,6 +13,7 @@ import java.util.Scanner;
  */
 public class Main {
     private static Scanner scanner;
+    private static VectorStoreService vectorStoreService;
     
     /**
      * Main method that starts the application.
@@ -24,6 +26,7 @@ public class Main {
         
         try {
             scanner = new Scanner(System.in);
+            vectorStoreService = new VectorStoreService();
             boolean running = true;
             
             while (running) {
@@ -88,15 +91,14 @@ public class Main {
         System.out.println("=".repeat(60));
         
         try {
-            System.out.println("Initializing the RAG system...");
-            RagService ragService = new RagService();
+            System.out.println("Initializing document loader...");
             
             DocumentLoaderService documentLoader = new DocumentLoaderService();
             List<dev.langchain4j.data.document.Document> documents = documentLoader.loadDocuments();
             
             System.out.println("\nLoading " + documents.size() + " documents into the knowledge base...");
             
-            ragService.addDocuments(documents);
+            vectorStoreService.addDocuments(documents);
             
             System.out.println("\n✅ Documents loaded successfully!");
             
@@ -117,7 +119,8 @@ public class Main {
         try {
             System.out.println("Initializing the chatbot...\n");
             
-            MedicaidChatbot chatbot = new MedicaidChatbot(scanner);
+            RagService ragService = new RagService(vectorStoreService);
+            MedicaidChatbot chatbot = new MedicaidChatbot(scanner, ragService);
             chatbot.start();
             
         } catch (Exception e) {

@@ -14,13 +14,14 @@ public class MedicaidChatbot {
     private boolean isRunning;
 
     /**
-     * Constructs a new MedicaidChatbot with the specified scanner.
+     * Constructs a new MedicaidChatbot with the specified scanner and RAG service.
      *
      * @param scanner the scanner to use for reading user input
+     * @param ragService the RAG service for generating responses
      */
-    public MedicaidChatbot(Scanner scanner) {
-        this.ragService = new RagService();
+    public MedicaidChatbot(Scanner scanner, RagService ragService) {
         this.scanner = scanner;
+        this.ragService = ragService;
         this.isRunning = false;
     }
     
