@@ -9,10 +9,10 @@ public class MedicaidChatbot {
     private final RagService ragService;
     private final Scanner scanner;
     private boolean isRunning;
-    
-    public MedicaidChatbot() {
+
+    public MedicaidChatbot(Scanner scanner) {
         this.ragService = new RagService();
-        this.scanner = new Scanner(System.in);
+        this.scanner = scanner;
         this.isRunning = false;
     }
     
@@ -48,8 +48,7 @@ public class MedicaidChatbot {
             }
         }
         
-        scanner.close();
-        System.out.println("Thank you for using the Minnesota Medicaid Assistant. Goodbye!");
+        System.out.println("\nReturning to main menu...");
     }
     
     /**
