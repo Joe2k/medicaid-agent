@@ -31,26 +31,21 @@ public class VectorStoreService {
     public void addDocument(Document document) {
         String documentId = generateDocumentId(document);
         
-        // Check if document already exists (if configured to skip)
         if (AppConfig.isSkipExistingDocuments() && documentExists(documentId)) {
             System.out.println("⏭️  Document already exists, skipping: " + document.metadata().asMap().get("title"));
             return;
         }
         
-        // Split the document into smaller segments
         List<TextSegment> segments = documentSplitter.split(document);
         
-        // Generate embeddings for each segment
         List<Embedding> embeddings = embeddingModel.embedAll(segments).content();
         
-        // Add document ID to segments for tracking
         for (int i = 0; i < segments.size(); i++) {
             TextSegment segment = segments.get(i);
             segment.metadata().put("document_id", documentId);
             segment.metadata().put("segment_index", String.valueOf(i));
         }
         
-        // Add to vector store
         embeddingStore.addAll(embeddings, segments);
         
         System.out.println("✅ Added " + segments.size() + " segments from document: " + document.metadata().asMap().get("title"));
@@ -69,13 +64,10 @@ public class VectorStoreService {
      * Search for relevant documents based on a query
      */
     public List<TextSegment> searchRelevantDocuments(String query, int maxResults) {
-        // Generate embedding for the query
         Embedding queryEmbedding = embeddingModel.embed(query).content();
         
-        // Search for similar embeddings
         List<EmbeddingMatch<TextSegment>> matches = embeddingStore.findRelevant(queryEmbedding, maxResults, 0.0);
         
-        // Extract text segments from matches
         return matches.stream()
                 .map(EmbeddingMatch::embedded)
                 .collect(Collectors.toList());
@@ -85,13 +77,10 @@ public class VectorStoreService {
      * Search for relevant documents with a minimum score threshold
      */
     public List<TextSegment> searchRelevantDocuments(String query, int maxResults, double minScore) {
-        // Generate embedding for the query
         Embedding queryEmbedding = embeddingModel.embed(query).content();
         
-        // Search for similar embeddings
         List<EmbeddingMatch<TextSegment>> matches = embeddingStore.findRelevant(queryEmbedding, maxResults, 0.0);
         
-        // Filter by minimum score and extract text segments
         return matches.stream()
                 .filter(match -> match.score() >= minScore)
                 .map(EmbeddingMatch::embedded)
@@ -124,14 +113,12 @@ public class VectorStoreService {
      */
     private boolean documentExists(String documentId) {
         try {
-            // Search for any segments with this document ID
             List<EmbeddingMatch<TextSegment>> matches = embeddingStore.findRelevant(
                 embeddingModel.embed(documentId).content(), 
                 1, 
                 0.0
             );
             
-            // Check if any match has the same document ID
             for (EmbeddingMatch<TextSegment> match : matches) {
                 String existingDocId = match.embedded().metadata().asMap().get("document_id");
                 if (documentId.equals(existingDocId)) {
@@ -140,7 +127,6 @@ public class VectorStoreService {
             }
             return false;
         } catch (Exception e) {
-            // If there's an error checking, assume document doesn't exist
             System.out.println("Warning: Could not check if document exists: " + e.getMessage());
             return false;
         }
