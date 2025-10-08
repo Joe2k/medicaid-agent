@@ -1,7 +1,7 @@
 package org.usfca.medicaid.service;
 
 import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.chat.ChatModel;
 import org.usfca.medicaid.config.AppConfig;
 
 import java.util.List;
@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 public class RagService {
     
     private final VectorStoreService vectorStoreService;
-    private final OpenAiChatModel chatModel;
+    private final ChatModel chatModel;
     
     /**
      * Constructs a new RagService with the provided vector store service.
