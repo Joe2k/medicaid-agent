@@ -54,7 +54,7 @@ public class MedicaidApplication {
                 
                 handleMenuChoice(choice);
                 
-                if (running && !choice.equals("2")) {
+                if (running && !choice.equals("2") && !choice.equals("4")) {
                     System.out.println("\nPress Enter to continue...");
                     scanner.nextLine();
                 }
@@ -87,10 +87,13 @@ public class MedicaidApplication {
                 startChat();
                 break;
             case "3":
+                clearVectorStore();
+                break;
+            case "4":
                 exitApplication();
                 break;
             default:
-                System.out.println("\n❌ Invalid choice. Please enter 1, 2, or 3.");
+                System.out.println("\n❌ Invalid choice. Please enter 1, 2, 3, or 4.");
                 break;
         }
     }
@@ -104,9 +107,10 @@ public class MedicaidApplication {
         System.out.println("=".repeat(60));
         System.out.println("1. Load Documents into Vector Store");
         System.out.println("2. Start Chat with Agent");
-        System.out.println("3. Exit");
+        System.out.println("3. Clear Vector Store");
+        System.out.println("4. Exit");
         System.out.println("=".repeat(60));
-        System.out.print("Enter your choice (1-3): ");
+        System.out.print("Enter your choice (1-4): ");
     }
     
     /**
@@ -153,6 +157,32 @@ public class MedicaidApplication {
             
         } catch (Exception e) {
             System.err.println("\n❌ Error starting chatbot: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Clear all documents from the vector store.
+     */
+    private void clearVectorStore() {
+        System.out.println("\n" + "=".repeat(60));
+        System.out.println("Clear Vector Store");
+        System.out.println("=".repeat(60));
+        
+        try {
+            System.out.print("\n⚠️  Are you sure you want to clear all documents? (yes/no): ");
+            String confirmation = scanner.nextLine().trim().toLowerCase();
+            
+            if (confirmation.equals("yes") || confirmation.equals("y")) {
+                System.out.println("\n🗑️  Clearing all documents from vector store...");
+                vectorStoreService.clearAllDocuments();
+                System.out.println("✅ Vector store cleared successfully!");
+            } else {
+                System.out.println("❌ Operation cancelled.");
+            }
+            
+        } catch (Exception e) {
+            System.err.println("\n❌ Error clearing vector store: " + e.getMessage());
             e.printStackTrace();
         }
     }
