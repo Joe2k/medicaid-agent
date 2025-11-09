@@ -16,7 +16,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 /**
  * Service for loading documents from various sources including URLs, PDFs,
@@ -25,12 +28,23 @@ import java.util.List;
 public class DocumentLoaderService {
     
     private final Tika tika;
+    private final Random random;
+    private final Map<String, String> cookies;
+    private final String[] userAgents;
     
     /**
      * Constructs a new DocumentLoaderService with an initialized Tika instance.
      */
     public DocumentLoaderService() {
         this.tika = new Tika();
+        this.random = new Random();
+        this.cookies = new HashMap<>();
+        this.userAgents = new String[]{
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15"
+        };
     }
 
     /**
@@ -45,7 +59,8 @@ public class DocumentLoaderService {
         
         List<Document> documents = new ArrayList<>();
         
-        for (String source : sources) {
+        for (int i = 0; i < sources.size(); i++) {
+            String source = sources.get(i);
             try {
                 Document document = loadDocument(source);
                 if (document != null) {
@@ -91,14 +106,40 @@ public class DocumentLoaderService {
     private Document loadFromUrl(String url) throws IOException {
         System.out.println("🌐 Loading content from URL: " + url);
 
-        org.jsoup.nodes.Document doc = Jsoup.connect(url)
-                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-                .timeout(10000)
-                .get();
+        String randomUserAgent = userAgents[random.nextInt(userAgents.length)];
+
+        org.jsoup.Connection.Response response = Jsoup.connect(url)
+                .userAgent(randomUserAgent)
+                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
+                .header("Accept-Language", "en-US,en;q=0.9")
+                .header("Accept-Encoding", "gzip, deflate, br")
+                .header("Connection", "keep-alive")
+                .header("Upgrade-Insecure-Requests", "1")
+                .header("Sec-Fetch-Dest", "document")
+                .header("Sec-Fetch-Mode", "navigate")
+                .header("Sec-Fetch-Site", "none")
+                .header("Sec-Fetch-User", "?1")
+                .header("Cache-Control", "max-age=0")
+                .header("DNT", "1")
+                .referrer("https://www.google.com/")
+                .cookies(cookies)
+                .timeout(20000)
+                .followRedirects(true)
+                .maxBodySize(0)
+                .execute();
+
+        cookies.putAll(response.cookies());
+        
+        org.jsoup.nodes.Document doc = response.parse();
 
         String title = doc.title();
         if (title == null || title.isEmpty()) {
             title = "Web Content from " + url;
+        }
+
+        if (isBotProtectionPage(doc, title)) {
+            System.out.println("⚠️  Bot protection detected, skipping: " + url);
+            throw new IOException("Bot protection page detected - cannot load content");
         }
 
         doc.select("script, style").remove();
@@ -124,6 +165,35 @@ public class DocumentLoaderService {
         }
         
         return createDocument(title, cleanContent, "web", "url", url);
+    }
+    
+    /**
+     * Check if the page is a bot protection page.
+     *
+     * @param doc the JSoup document
+     * @param title the page title
+     * @return true if bot protection is detected, false otherwise
+     */
+    private boolean isBotProtectionPage(org.jsoup.nodes.Document doc, String title) {
+        String lowerTitle = title.toLowerCase();
+        String bodyText = doc.body() != null ? doc.body().text().toLowerCase() : "";
+
+        if (lowerTitle.contains("radware") || lowerTitle.contains("captcha")) {
+            return true;
+        }
+
+        if (bodyText.length() < 500) {
+            return true;
+        }
+
+        String[] botIndicators = {"bot manager", "access denied", "blocked", "security check"};
+        for (String indicator : botIndicators) {
+            if (lowerTitle.contains(indicator) || bodyText.contains(indicator)) {
+                return true;
+            }
+        }
+        
+        return false;
     }
     
     /**
