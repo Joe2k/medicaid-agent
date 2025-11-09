@@ -2,6 +2,8 @@ package org.usfca.medicaid.chatbot;
 
 import org.usfca.medicaid.service.RagService;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 /**
@@ -12,6 +14,7 @@ public class MedicaidChatbot {
     private final RagService ragService;
     private final Scanner scanner;
     private boolean isRunning;
+    private final List<String> conversationHistory;
 
     /**
      * Constructs a new MedicaidChatbot with the specified scanner and RAG service.
@@ -23,6 +26,7 @@ public class MedicaidChatbot {
         this.scanner = scanner;
         this.ragService = ragService;
         this.isRunning = false;
+        this.conversationHistory = new ArrayList<>();
     }
     
     /**
@@ -45,9 +49,20 @@ public class MedicaidChatbot {
                     handleExitCommand();
                     break;
                 }
-                
+
+                if (userInput.length() < 3) {
+                    System.out.println("Medicaid Assistant: Please ask a more detailed question.");
+                    continue;
+                }
+
+                conversationHistory.add("User: " + userInput);
+ 
                 System.out.print("Medicaid Assistant: ");
-                String response = ragService.generateResponse(userInput);
+
+                String response = ragService.generateResponse(userInput, conversationHistory);
+ 
+                conversationHistory.add("Assistant: " + response);
+                
                 System.out.println(response);
                 
             } catch (Exception e) {

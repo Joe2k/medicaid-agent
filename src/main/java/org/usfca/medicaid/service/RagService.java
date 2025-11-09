@@ -24,16 +24,20 @@ public class RagService {
         this.vectorStoreService = vectorStoreService;
         this.chatModel = AppConfig.createChatModel();
     }
-    
+
     /**
-     * Generate a response using RAG (Retrieval-Augmented Generation).
+     * Generate a response using RAG with conversation history for context-aware responses.
      * Retrieves relevant documents and uses them as context for the language model.
      *
      * @param userQuery the user's question or query
-     * @return a generated response based on the retrieved context
+     * @param conversationHistory the previous conversation messages for context
+     * @return a generated response based on the retrieved context and conversation history
      */
-    public String generateResponse(String userQuery) {
-        List<TextSegment> relevantDocuments = vectorStoreService.searchRelevantDocuments(userQuery, 5, 0.7);
+    public String generateResponse(String userQuery, List<String> conversationHistory) {
+
+        String enhancedQuery = buildEnhancedQuery(userQuery, conversationHistory);
+        
+        List<TextSegment> relevantDocuments = vectorStoreService.searchRelevantDocuments(enhancedQuery, 5, 0.7);
         
         if (relevantDocuments.isEmpty()) {
             return "I'm sorry, I couldn't find relevant information about your query in the Minnesota Medicaid documentation. " +
@@ -42,7 +46,7 @@ public class RagService {
         
         String context = buildContextFromDocuments(relevantDocuments);
         
-        String prompt = buildPrompt(context, userQuery);
+        String prompt = buildPromptWithHistory(context, userQuery, conversationHistory);
         
         return chatModel.chat(prompt);
     }
@@ -85,5 +89,68 @@ public class RagService {
             6. Always remind users that this is general information and they should contact the Minnesota Department of Human Services for their specific situation
             
             Answer:""", context, userQuery);
+    }
+    
+    /**
+     * Build an enhanced query that includes conversation context.
+     * This helps retrieve more relevant documents for follow-up questions.
+     *
+     * @param userQuery the current user query
+     * @param conversationHistory the previous conversation messages
+     * @return an enhanced query string with context
+     */
+    private String buildEnhancedQuery(String userQuery, List<String> conversationHistory) {
+        if (conversationHistory == null || conversationHistory.isEmpty()) {
+            return userQuery;
+        }
+        
+        // Get the last few messages for context (up to 4 messages = 2 Q&A pairs)
+        int startIndex = Math.max(0, conversationHistory.size() - 4);
+        List<String> recentHistory = conversationHistory.subList(startIndex, conversationHistory.size());
+
+        String historyContext = String.join(" ", recentHistory);
+        return historyContext + " " + userQuery;
+    }
+    
+    /**
+     * Build the prompt with conversation history for context-aware responses.
+     *
+     * @param context the context from retrieved documents
+     * @param userQuery the user's question
+     * @param conversationHistory the previous conversation messages
+     * @return a formatted prompt for the language model
+     */
+    private String buildPromptWithHistory(String context, String userQuery, List<String> conversationHistory) {
+        if (conversationHistory == null || conversationHistory.isEmpty()) {
+            return buildPrompt(context, userQuery);
+        }
+
+        // Get recent conversation history (last 6 messages = 3 Q&A pairs)
+        int startIndex = Math.max(0, conversationHistory.size() - 6);
+        List<String> recentHistory = conversationHistory.subList(startIndex, conversationHistory.size());
+        String historyText = String.join("\n", recentHistory);
+        
+        return String.format("""
+            You are a helpful assistant specializing in Minnesota Medicaid eligibility and benefits information. 
+            Use the following context from official Minnesota Medicaid documentation to answer the user's question.
+            
+            Context:
+            %s
+            
+            Previous Conversation:
+            %s
+            
+            Current User Question: %s
+            
+            Instructions:
+            1. Answer based ONLY on the provided context
+            2. Consider the conversation history to understand follow-up questions
+            3. If the question refers to something mentioned earlier (like "Is there a specific program"), use the conversation history to understand what they're asking about
+            4. Be specific about eligibility requirements, benefits, and processes
+            5. Include relevant contact information or next steps when appropriate
+            6. If discussing income limits, mention that they are subject to change and should be verified
+            7. Always remind users that this is general information and they should contact the Minnesota Department of Human Services for their specific situation
+            
+            Answer:""", context, historyText, userQuery);
     }
 }
