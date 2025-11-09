@@ -123,8 +123,12 @@ public class MedicaidApplication {
         
         try {
             System.out.println("🗑️  Clearing existing documents from vector store...");
-            vectorStoreService.clearAllDocuments();
-            System.out.println("✅ Vector store cleared.\n");
+            try {
+                vectorStoreService.clearAllDocuments();
+                System.out.println("✅ Vector store cleared.\n");
+            } catch (Exception e) {
+                System.out.println("ℹ️  Could not clear vector store (may be empty). Continuing...\n");
+            }
             
             System.out.println("Loading documents from configured sources...");
             
