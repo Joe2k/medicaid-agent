@@ -34,10 +34,7 @@ public class RagService {
      * @return a generated response based on the retrieved context and conversation history
      */
     public String generateResponse(String userQuery, List<String> conversationHistory) {
-
-        String enhancedQuery = buildEnhancedQuery(userQuery, conversationHistory);
-        
-        List<TextSegment> relevantDocuments = vectorStoreService.searchRelevantDocuments(enhancedQuery, 5, 0.7);
+        List<TextSegment> relevantDocuments = vectorStoreService.searchRelevantDocuments(userQuery, 5, 0.7);
         
         if (relevantDocuments.isEmpty()) {
             return "I'm sorry, I couldn't find relevant information about your query in the Minnesota Medicaid documentation. " +
@@ -89,27 +86,6 @@ public class RagService {
             6. Always remind users that this is general information and they should contact the Minnesota Department of Human Services for their specific situation
             
             Answer:""", context, userQuery);
-    }
-    
-    /**
-     * Build an enhanced query that includes conversation context.
-     * This helps retrieve more relevant documents for follow-up questions.
-     *
-     * @param userQuery the current user query
-     * @param conversationHistory the previous conversation messages
-     * @return an enhanced query string with context
-     */
-    private String buildEnhancedQuery(String userQuery, List<String> conversationHistory) {
-        if (conversationHistory == null || conversationHistory.isEmpty()) {
-            return userQuery;
-        }
-        
-        // Get the last few messages for context (up to 4 messages = 2 Q&A pairs)
-        int startIndex = Math.max(0, conversationHistory.size() - 4);
-        List<String> recentHistory = conversationHistory.subList(startIndex, conversationHistory.size());
-
-        String historyContext = String.join(" ", recentHistory);
-        return historyContext + " " + userQuery;
     }
     
     /**
