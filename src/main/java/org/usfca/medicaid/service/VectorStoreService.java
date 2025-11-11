@@ -10,6 +10,7 @@ import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingSearchResult;
 import dev.langchain4j.store.embedding.EmbeddingStore;
+import org.springframework.stereotype.Service;
 import org.usfca.medicaid.config.AppConfig;
 
 import java.util.List;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 /**
  * Service for managing document storage and retrieval in a vector database.
  */
+@Service
 public class VectorStoreService {
     
     private final EmbeddingStore<TextSegment> embeddingStore;

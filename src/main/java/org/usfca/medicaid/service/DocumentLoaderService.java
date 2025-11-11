@@ -7,6 +7,7 @@ import org.apache.tika.exception.TikaException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.stereotype.Service;
 import org.usfca.medicaid.config.DocumentConfig;
 
 import java.io.ByteArrayInputStream;
@@ -26,6 +27,7 @@ import java.util.Random;
  * Service for loading documents from various sources including URLs, PDFs,
  * text files, and other file types.
  */
+@Service
 public class DocumentLoaderService {
     
     private final Tika tika;

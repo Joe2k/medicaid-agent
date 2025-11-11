@@ -2,6 +2,7 @@ package org.usfca.medicaid.service;
 
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.chat.ChatModel;
+import org.springframework.stereotype.Service;
 import org.usfca.medicaid.config.AppConfig;
 
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ import java.util.stream.Collectors;
 /**
  * Service that implements Retrieval-Augmented Generation (RAG) for the chatbot.
  */
+@Service
 public class RagService {
 
     private final VectorStoreService vectorStoreService;
