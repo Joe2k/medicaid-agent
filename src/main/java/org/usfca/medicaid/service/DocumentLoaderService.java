@@ -9,6 +9,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.usfca.medicaid.config.DocumentConfig;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -110,7 +111,7 @@ public class DocumentLoaderService {
 
         org.jsoup.Connection.Response response = Jsoup.connect(url)
                 .userAgent(randomUserAgent)
-                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
+                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,application/pdf;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
                 .header("Accept-Language", "en-US,en;q=0.9")
                 .header("Accept-Encoding", "gzip, deflate, br")
                 .header("Connection", "keep-alive")
@@ -122,14 +123,45 @@ public class DocumentLoaderService {
                 .header("Cache-Control", "max-age=0")
                 .header("DNT", "1")
                 .referrer("https://www.google.com/")
+                .ignoreContentType(true)
                 .cookies(cookies)
-                .timeout(20000)
+                .timeout(60000)
                 .followRedirects(true)
                 .maxBodySize(0)
                 .execute();
 
         cookies.putAll(response.cookies());
         
+        String contentType = response.contentType() != null ? response.contentType().toLowerCase() : "";
+
+        if (contentType.contains("pdf") || url.toLowerCase().endsWith(".pdf")) {
+            try (InputStream pdfStream = new ByteArrayInputStream(response.bodyAsBytes())) {
+                String pdfContent = tika.parseToString(pdfStream);
+
+                if (pdfContent == null || pdfContent.trim().isEmpty()) {
+                    throw new IOException("No content extracted from PDF");
+                }
+
+                String cleanPdfContent = pdfContent
+                        .replaceAll("\\s+", " ")
+                        .trim();
+
+                String title = response.header("Content-Disposition");
+                if (title != null && title.contains("filename=")) {
+                    title = title.substring(title.indexOf("filename=") + 9).replace("\"", "");
+                } else {
+                    title = url.substring(url.lastIndexOf('/') + 1);
+                    if (title.isEmpty()) {
+                        title = "PDF content from " + url;
+                    }
+                }
+
+                return createDocument(title, cleanPdfContent, "pdf", "url", url);
+            } catch (TikaException e) {
+                throw new IOException("Failed to parse PDF content: " + e.getMessage(), e);
+            }
+        }
+
         org.jsoup.nodes.Document doc = response.parse();
 
         String title = doc.title();
