@@ -4,17 +4,20 @@ import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.chat.ChatModel;
 import org.usfca.medicaid.config.AppConfig;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
  * Service that implements Retrieval-Augmented Generation (RAG) for the chatbot.
  */
 public class RagService {
-    
+
     private final VectorStoreService vectorStoreService;
     private final ChatModel chatModel;
-    
+
     /**
      * Constructs a new RagService with the provided vector store service.
      *
@@ -34,20 +37,20 @@ public class RagService {
      * @return a generated response based on the retrieved context and conversation history
      */
     public String generateResponse(String userQuery, List<String> conversationHistory) {
-        List<TextSegment> relevantDocuments = vectorStoreService.searchRelevantDocuments(userQuery, 5, 0.7);
-        
+        List<TextSegment> relevantDocuments = retrieveRelevantDocuments(userQuery, conversationHistory);
+
         if (relevantDocuments.isEmpty()) {
             return "I'm sorry, I couldn't find relevant information about your query in the Minnesota Medicaid documentation. " +
-                   "Please try rephrasing your question or contact the Minnesota Department of Human Services for assistance.";
+                    "Please try rephrasing your question or contact the Minnesota Department of Human Services for assistance.";
         }
-        
+
         String context = buildContextFromDocuments(relevantDocuments);
-        
+
         String prompt = buildPromptWithHistory(context, userQuery, conversationHistory);
-        
+
         return chatModel.chat(prompt);
     }
-    
+
     /**
      * Build context string from retrieved documents.
      *
@@ -59,7 +62,7 @@ public class RagService {
                 .map(TextSegment::text)
                 .collect(Collectors.joining("\n\n---\n\n"));
     }
-    
+
     /**
      * Build the prompt for the chat model with context and instructions.
      *
@@ -87,7 +90,7 @@ public class RagService {
             
             Answer:""", context, userQuery);
     }
-    
+
     /**
      * Build the prompt with conversation history for context-aware responses.
      *
@@ -101,11 +104,8 @@ public class RagService {
             return buildPrompt(context, userQuery);
         }
 
-        // Get recent conversation history (last 6 messages = 3 Q&A pairs)
-        int startIndex = Math.max(0, conversationHistory.size() - 6);
-        List<String> recentHistory = conversationHistory.subList(startIndex, conversationHistory.size());
-        String historyText = String.join("\n", recentHistory);
-        
+        String historyText = getRecentConversationHistory(conversationHistory);
+
         return String.format("""
             You are a helpful assistant specializing in Minnesota Medicaid eligibility and benefits information. 
             Use the following context from official Minnesota Medicaid documentation to answer the user's question.
@@ -128,5 +128,135 @@ public class RagService {
             7. Always remind users that this is general information and they should contact the Minnesota Department of Human Services for their specific situation
             
             Answer:""", context, historyText, userQuery);
+    }
+
+    /**
+     * Retrieve relevant documents for the user's query after generating improved search queries.
+     *
+     * @param userQuery the user's original query
+     * @param conversationHistory previous conversation messages
+     * @return a list of relevant text segments
+     */
+    private List<TextSegment> retrieveRelevantDocuments(String userQuery, List<String> conversationHistory) {
+        List<String> searchQueries = generateSearchQueries(userQuery, conversationHistory);
+
+        Map<String, TextSegment> uniqueMatches = new LinkedHashMap<>();
+
+        for (String query : searchQueries) {
+            try {
+                List<TextSegment> matches = vectorStoreService.searchRelevantDocuments(query, 5, 0.65);
+                for (TextSegment match : matches) {
+                    String key = buildSegmentKey(match);
+                    uniqueMatches.putIfAbsent(key, match);
+                }
+            } catch (Exception ex) {
+                System.out.printf("⚠️ Vector search failed for query '%s': %s%n", query, ex.getMessage());
+            }
+        }
+
+        return new ArrayList<>(uniqueMatches.values());
+    }
+
+    /**
+     * Generate a set of optimized search queries using a query rewriting prompt.
+     *
+     * @param userQuery the original user query
+     * @param conversationHistory the recent conversation history for context
+     * @return a list of unique search queries to execute against the vector store
+     */
+    private List<String> generateSearchQueries(String userQuery, List<String> conversationHistory) {
+        List<String> queries = new ArrayList<>();
+        queries.add(userQuery);
+
+        String historyText = getRecentConversationHistory(conversationHistory);
+
+        String rewritePrompt = String.format("""
+            You are assisting with retrieval for a Minnesota Medicaid knowledge base.
+            Generate up to three alternative semantic search queries that would help retrieve context for answering the user.
+            Focus on transforming follow-up questions into standalone queries and expand acronyms where appropriate.
+
+            Original question: %s
+
+            Recent conversation context:
+            %s
+
+            Output Format:
+            - Return only the new search queries, one per line.
+            - Do not number the queries or add explanations.
+            - If the original question is already clear, return a single identical line.
+            """,
+                userQuery,
+                historyText.isEmpty() ? "None provided." : historyText
+        );
+
+        try {
+            String rewriteResponse = chatModel.chat(rewritePrompt);
+            List<String> rewrittenQueries = parseRewrittenQueries(rewriteResponse);
+
+            for (String rewritten : rewrittenQueries) {
+                if (!rewritten.equalsIgnoreCase(userQuery) && !queries.contains(rewritten)) {
+                    queries.add(rewritten);
+                }
+            }
+        } catch (Exception ex) {
+            System.out.printf("⚠️ Query rewriting failed: %s%n", ex.getMessage());
+        }
+
+        return queries;
+    }
+
+    /**
+     * Parse the rewritten queries response into individual search queries.
+     *
+     * @param response the raw response text from the language model
+     * @return a list of parsed queries
+     */
+    private List<String> parseRewrittenQueries(String response) {
+        if (response == null || response.isBlank()) {
+            return List.of();
+        }
+
+        return response.lines()
+                .map(String::trim)
+                .filter(line -> !line.isEmpty())
+                .map(line -> line.replaceAll("^(\\d+\\.|[-*•])\\s*", ""))
+                .distinct()
+                .limit(3)
+                .toList();
+    }
+
+    /**
+     * Build a unique key for text segments to avoid duplicates in the context.
+     *
+     * @param segment the text segment returned from the vector search
+     * @return a stable key representing the segment
+     */
+    private String buildSegmentKey(TextSegment segment) {
+        if (segment == null) {
+            return "null-segment";
+        }
+
+        Map<String, Object> metadataMap = segment.metadata() != null ? segment.metadata().toMap() : Map.of();
+        String documentId = String.valueOf(metadataMap.getOrDefault("document_id", metadataMap.getOrDefault("source", "unknown_document")));
+        String segmentIndex = String.valueOf(metadataMap.getOrDefault("segment_index", segment.text().hashCode()));
+
+        return documentId + "::" + segmentIndex;
+    }
+
+    /**
+     * Extract recent conversation history for prompts.
+     *
+     * @param conversationHistory the full conversation history
+     * @return a string with the most recent exchanges
+     */
+    private String getRecentConversationHistory(List<String> conversationHistory) {
+        if (conversationHistory == null || conversationHistory.isEmpty()) {
+            return "";
+        }
+
+        int startIndex = Math.max(0, conversationHistory.size() - 6);
+        List<String> recentHistory = conversationHistory.subList(startIndex, conversationHistory.size());
+
+        return String.join("\n", recentHistory);
     }
 }
