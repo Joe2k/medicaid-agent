@@ -19,6 +19,9 @@ public class AppConfig {
     
     private static final String openaiChatModel = "gpt-3.5-turbo";
     private static final String openaiEmbeddingModel = "text-embedding-3-small";
+    private static final boolean DEBUG_LOGGING = Boolean.parseBoolean(
+            System.getenv().getOrDefault("MEDICAID_AGENT_DEBUG", "true")
+    );
 
     /**
      * Create and configure an OpenAI chat model.
@@ -73,6 +76,15 @@ public class AppConfig {
                 .apiKey(PINECONE_API_KEY)
                 .index(PINECONE_INDEX_NAME)
                 .build();
+    }
+
+    /**
+     * Indicates whether debug logging is enabled for the application.
+     *
+     * @return true if debug logging is enabled, false otherwise
+     */
+    public static boolean isDebugLoggingEnabled() {
+        return DEBUG_LOGGING;
     }
 
 }
