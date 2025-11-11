@@ -18,6 +18,7 @@ public class DocumentConfig {
      */
     public static List<String> getDocumentSources() {
         return Arrays.asList(
+                // Web Pages
                 "https://www.kff.org/medicaid/health-policy-101-medicaid/?entry=table-of-contents-what-long-term-services-and-supports-ltss-are-covered-by-medicaid",
                 "https://mn.gov/dhs/people-we-serve/adults/health-care/health-care-programs/programs-and-services/",
                 "https://mn.gov/dhs/people-we-serve/adults/health-care/health-care-programs/programs-and-services/medical-assistance.jsp",
@@ -30,7 +31,11 @@ public class DocumentConfig {
                 "https://mn.gov/dhs/people-we-serve/adults/health-care/health-care-programs/programs-and-services/ma-waiver-programs.jsp",
                 "https://mn.gov/dhs/people-we-serve/adults/health-care/health-care-programs/programs-and-services/estate-recovery.jsp",
                 "https://www.mnsure.org/shop-compare/right-plan/drug-lists.jsp",
-                "https://mn.gov/dhs/assets/preferred-drug-list-2025-01-01_tcm1053-662387.pdf"
+                "https://mn.gov/dhs/assets/preferred-drug-list-2025-01-01_tcm1053-662387.pdf",
+                "https://edocs.dhs.state.mn.us/lfserver/Public/DHS-3860-ENG",
+
+                // Local PDF Documents
+                "documents/Medicaid Matters.pdf"
         );
     }
 }
