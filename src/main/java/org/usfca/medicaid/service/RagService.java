@@ -37,18 +37,27 @@ public class RagService {
      * @return a generated response based on the retrieved context and conversation history
      */
     public String generateResponse(String userQuery, List<String> conversationHistory) {
+        log("------------------------------------------------------------");
+        log(String.format("🤔 Thinking... received question: \"%s\"", userQuery));
+
         List<TextSegment> relevantDocuments = retrieveRelevantDocuments(userQuery, conversationHistory);
 
         if (relevantDocuments.isEmpty()) {
+            log("⚠️  No relevant documents found. Returning fallback message.");
             return "I'm sorry, I couldn't find relevant information about your query in the Minnesota Medicaid documentation. " +
                     "Please try rephrasing your question or contact the Minnesota Department of Human Services for assistance.";
         }
 
         String context = buildContextFromDocuments(relevantDocuments);
 
+        log(String.format("📚 Compiled %d document segments into context.", relevantDocuments.size()));
+
         String prompt = buildPromptWithHistory(context, userQuery, conversationHistory);
 
-        return chatModel.chat(prompt);
+        log("💬 Calling language model for final response...");
+        String answer = chatModel.chat(prompt);
+        log("✅ Language model returned an answer.");
+        return answer;
     }
 
     /**
@@ -143,16 +152,20 @@ public class RagService {
         Map<String, TextSegment> uniqueMatches = new LinkedHashMap<>();
 
         for (String query : searchQueries) {
+            log(String.format("🔎 Searching Pinecone with query: \"%s\"", query));
             try {
                 List<TextSegment> matches = vectorStoreService.searchRelevantDocuments(query, 5, 0.65);
+                log(String.format("   ↳ Retrieved %d matches.", matches.size()));
                 for (TextSegment match : matches) {
                     String key = buildSegmentKey(match);
                     uniqueMatches.putIfAbsent(key, match);
                 }
             } catch (Exception ex) {
-                System.out.printf("⚠️ Vector search failed for query '%s': %s%n", query, ex.getMessage());
+                log(String.format("⚠️ Vector search failed for query '%s': %s", query, ex.getMessage()));
             }
         }
+
+        log(String.format("📦 Total unique segments accumulated: %d", uniqueMatches.size()));
 
         return new ArrayList<>(uniqueMatches.values());
     }
@@ -169,6 +182,8 @@ public class RagService {
         queries.add(userQuery);
 
         String historyText = getRecentConversationHistory(conversationHistory);
+
+        log("🛠️  Generating rewritten search queries...");
 
         String rewritePrompt = String.format("""
             You are assisting with retrieval for a Minnesota Medicaid knowledge base.
@@ -198,8 +213,15 @@ public class RagService {
                     queries.add(rewritten);
                 }
             }
+
+            log(String.format("   ↳ Generated %d rewritten queries.", queries.size() - 1));
+            rewrittenQueries.forEach(q -> log(String.format("      • %s", q)));
         } catch (Exception ex) {
-            System.out.printf("⚠️ Query rewriting failed: %s%n", ex.getMessage());
+            log(String.format("⚠️ Query rewriting failed: %s", ex.getMessage()));
+        }
+
+        if (queries.size() == 1) {
+            log("   ↳ No alternative queries generated; using original question only.");
         }
 
         return queries;
@@ -258,5 +280,11 @@ public class RagService {
         List<String> recentHistory = conversationHistory.subList(startIndex, conversationHistory.size());
 
         return String.join("\n", recentHistory);
+    }
+
+    private void log(String message) {
+        if (AppConfig.isDebugLoggingEnabled()) {
+            System.out.println("[DEBUG] " + message);
+        }
     }
 }

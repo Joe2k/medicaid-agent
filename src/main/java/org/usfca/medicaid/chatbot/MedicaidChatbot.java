@@ -57,13 +57,11 @@ public class MedicaidChatbot {
 
                 conversationHistory.add("User: " + userInput);
  
-                System.out.print("Medicaid Assistant: ");
-
                 String response = ragService.generateResponse(userInput, conversationHistory);
  
                 conversationHistory.add("Assistant: " + response);
                 
-                System.out.println(response);
+                System.out.println("Medicaid Assistant: " + response);
                 
             } catch (Exception e) {
                 System.err.println("An error occurred: " + e.getMessage());
